@@ -1,0 +1,2046 @@
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransitVis Insights</title>
+    <!-- Link to Google Font (Example: Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Plotly.js for Charting (Load early if complex charts depend on it) -->
+    <script src='https://cdn.plot.ly/plotly-2.29.1.min.js' charset='utf-8'></script>
+
+    <!-- **Moved PapaParse here - before the main script that uses it** -->
+    <!-- PapaParse for CSV Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" integrity="sha512-dfX5uYVXzyU8+KHqj8bjo7UkOdg18PaOtpa48djpNbZHwExddghZ+ZmzWT06R5v6NSk3ZUfsH6FNEDepLx9hPQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <style>
+        /* --- Basic Placeholder Styles --- */
+        :root {
+            --accent-color: #0d6efd; /* Bootstrap Blue */
+            --accent-color-light: #e0edff;
+            --accent-color-dark: #0a58ca;
+            --text-color: #333;
+            --muted-color: #6c757d;
+            --bg-color: #f8f9fa;
+            --card-bg: #fff;
+            --border-color: #e0e0e0;
+            --error-color: #dc3545;
+            --success-color: #198754;
+            --font-family-sans-serif: 'Inter', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family-sans-serif);
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        header {
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header .logo h1 {
+            margin: 0;
+            font-size: 1.5em;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        header .help-link a {
+            text-decoration: none;
+            color: var(--muted-color);
+        }
+        header .help-link a:hover {
+            color: var(--accent-color);
+        }
+
+        .upload-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--accent-color);
+            padding: 60px 30px;
+            border-radius: 8px;
+            background-color: #f0f5ff;
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area.drag-over {
+            background-color: var(--accent-color-light);
+            border-color: var(--accent-color-dark);
+            border-style: solid;
+        }
+
+        .upload-area h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+            font-weight: 500;
+        }
+
+        .upload-area p {
+            color: var(--muted-color);
+            margin-bottom: 20px;
+        }
+
+        .upload-area .upload-icon {
+            font-size: 3em;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            /* Consider using an SVG icon here */
+        }
+
+        .separator {
+            margin: 20px 0;
+            color: #adb5bd;
+            font-weight: 500;
+        }
+
+        /* General Button Styles */
+        .btn {
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: 500;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.2s ease, opacity 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px; /* Space between icon and text */
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Specific Button Styles */
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--accent-color-dark);
+        }
+         .btn-primary:disabled {
+             background-color: var(--muted-color);
+         }
+
+
+        .btn-secondary {
+             background-color: var(--bg-color);
+             color: var(--muted-color);
+             border: 1px solid #ced4da; /* Light grey border */
+         }
+         .btn-secondary:hover:not(:disabled) {
+             background-color: #e2e6ea; /* Slightly darker grey on hover */
+             border-color: #adb5bd;
+         }
+
+        .btn-danger-outline {
+            background-color: var(--bg-color);
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+         .btn-danger-outline:hover:not(:disabled) {
+             background-color: var(--error-color);
+             color: white;
+         }
+
+        .helper-text {
+            font-size: 0.9em;
+            color: var(--muted-color);
+            margin-top: 15px;
+        }
+
+        /* File Status Area */
+        #file-status-area {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--bg-color);
+        }
+
+        #file-status-area h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        #file-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+            max-height: 250px; /* Adjust as needed */
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: var(--card-bg);
+        }
+
+        #file-list li {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95em;
+        }
+        #file-list li:last-child {
+            border-bottom: none;
+        }
+
+        #file-list .file-name {
+            flex-grow: 1;
+            margin-right: 15px;
+            word-break: break-all; /* Prevent long names breaking layout */
+        }
+        #file-list .file-status {
+            margin-left: 10px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+         #file-list .file-status .spinner {
+             display: inline-block;
+             animation: spin 1s linear infinite;
+             /* Simple text spinner, replace with CSS animation or icon */
+         }
+         #file-list .file-status .ready { color: var(--success-color); }
+         #file-list .file-status .error { color: var(--error-color); }
+         #file-list .file-status .pending { color: var(--muted-color); }
+
+
+        #file-list .remove-file {
+            cursor: pointer;
+            color: var(--error-color);
+            margin-left: 15px;
+            font-weight: bold;
+            padding: 2px 5px;
+        }
+        #file-list .remove-file:hover {
+             background-color: #f8d7da; /* Light red background on hover */
+             border-radius: 3px;
+         }
+
+        #file-summary {
+            font-size: 0.9em;
+            color: var(--muted-color);
+            margin-top: 10px;
+            text-align: left;
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between; /* Align buttons */
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 10px;
+        }
+         .action-buttons .left-actions { flex-grow: 1; text-align: left; }
+         .action-buttons .right-actions { flex-grow: 0; }
+
+
+        /* Results Section */
+        .results-section {
+            margin-top: 40px;
+        }
+        #results-title {
+             text-align: center;
+             margin-bottom: 20px;
+             font-weight: 500;
+         }
+
+
+        /* Loader Styles */
+        .loader-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 0;
+        }
+        .loader {
+            border: 5px solid #f3f3f3; /* Light grey */
+            border-top: 5px solid var(--accent-color); /* Blue */
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #loading-indicator p {
+            text-align: center;
+            color: var(--muted-color);
+            font-weight: 500;
+        }
+
+        /* Graph Grid */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); /* Responsive grid */
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .graph-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .graph-card.error-card {
+            background-color: #fff3f3; /* Light red background for error cards */
+            border-color: var(--error-color);
+         }
+         .graph-card.error-card h4 { color: var(--error-color); }
+
+
+        .graph-card h4 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .graph-image-container {
+             flex-grow: 1; /* Allow container to take available space */
+             min-height: 300px; /* Ensure minimum height for Plotly */
+             display: flex; /* Center Plotly div if needed */
+             align-items: center;
+             justify-content: center;
+             margin-bottom: 10px;
+             /* The plotly div itself will be inside this */
+         }
+        /* Target the Plotly generated div */
+        .graph-image-container .plotly-graph-div {
+            width: 100% !important;
+            height: 100% !important;
+         }
+
+        .download-graph-btn {
+            display: block;
+            text-align: right;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: var(--accent-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .download-graph-btn:hover {
+            text-decoration: underline;
+        }
+
+        #download-all-btn {
+            display: block;
+            margin: 30px auto 10px auto; /* Center button above grid */
+            width: fit-content;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px 0;
+            font-size: 0.9em;
+            color: var(--muted-color);
+            border-top: 1px solid var(--border-color);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <!-- Optional: <img src="logo.svg" alt="TransitVis Insights Logo"> -->
+                <h1>TransitVis Insights</h1>
+            </div>
+            <nav class="help-link">
+                <a href="#">Help</a> <!-- Link to documentation or modal -->
+            </nav>
+        </header>
+
+        <main>
+            <section class="upload-section" id="upload-section">
+
+                <!-- Initial Upload View -->
+                <div class="upload-area" id="upload-zone">
+                    <!-- Placeholder for an icon -->
+                    <div class="upload-icon">📤</div> <!-- Example emoji icon -->
+                    <h2>Analyze Your Transit Data</h2>
+                    <p id="upload-instructions">Drag & drop your monthly CSV files here</p>
+                    <div class="separator">OR</div>
+                    <button class="btn btn-primary" id="browse-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16">
+                          <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                          <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+                        </svg>
+                        Browse Files
+                    </button>
+                    <p class="helper-text">Supports multiple .csv files. Ensure files follow the standard monthly report format.</p>
+                </div>
+
+                <!-- File List and Actions View (Initially Hidden) -->
+                <div id="file-status-area" style="display: none;">
+                    <h3>Uploaded Files</h3>
+                    <ul id="file-list">
+                        <!-- File items will be added here by JavaScript -->
+                    </ul>
+                    <p id="file-summary">0 files selected.</p>
+                    <div class="action-buttons">
+                        <div class="left-actions">
+                             <button class="btn btn-secondary" id="add-more-btn">[+] Add More</button>
+                             <button class="btn btn-danger-outline" id="clear-all-btn">[🗑️] Clear All</button>
+                        </div>
+                         <div class="right-actions">
+                             <button class="btn btn-primary" id="generate-btn" disabled>[📊 Generate Graphs]</button>
+                         </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <section class="results-section" id="results-section">
+                <!-- Title appears when results or loader show -->
+                <h2 id="results-title" style="display: none;">Generated Insights</h2>
+
+                <!-- Loading Indicator (Initially Hidden) -->
+                <div id="loading-indicator" class="loader-container" style="display: none;">
+                    <div class="loader"></div>
+                    <p>Processing data and generating insights...</p>
+                </div>
+
+                <!-- Graph Display Area (Initially Hidden) -->
+                 <button id="download-all-btn" class="btn btn-secondary" style="display: none;">[↓] Download All Graphs</button>
+                <div class="grid-container" id="graph-grid" style="display: none;">
+                    <!-- Graph cards are containers -->
+                    <div class="graph-card" id="graph-card-1">
+                        <h4>1. Monthly Ridership Trend</h4>
+                        <div class="graph-image-container">
+                             <div id="graph-img-1" class="plotly-graph-div"></div> <!-- Target for Plotly -->
+                        </div>
+                         <a href="#" class="download-graph-btn" id="download-graph-1" download="1_monthly_ridership_trend.png" style="display:none;">[↓] Download</a>
+                    </div>
+                    <div class="graph-card" id="graph-card-2">
+                        <h4>2. Top & Bottom Routes by Avg P/Hrs</h4>
+                         <div class="graph-image-container">
+                             <div id="graph-img-2" class="plotly-graph-div"></div>
+                        </div>
+                         <a href="#" class="download-graph-btn" id="download-graph-2" download="2_top_bottom_p_hrs.png" style="display:none;">[↓] Download</a>
+                    </div>
+                    <div class="graph-card" id="graph-card-3">
+                        <h4>3. YoY Change in P/Mi Efficiency</h4>
+                         <div class="graph-image-container">
+                             <div id="graph-img-3" class="plotly-graph-div"></div>
+                        </div>
+                        <a href="#" class="download-graph-btn" id="download-graph-3" download="3_yoy_change_pmi.png" style="display:none;">[↓] Download</a>
+                    </div>
+                    <div class="graph-card" id="graph-card-4">
+                        <h4>4. Revenue Component Composition</h4>
+                         <div class="graph-image-container">
+                             <div id="graph-img-4" class="plotly-graph-div"></div>
+                        </div>
+                        <a href="#" class="download-graph-btn" id="download-graph-4" download="4_revenue_composition.png" style="display:none;">[↓] Download</a>
+                    </div>
+                    <div class="graph-card" id="graph-card-5">
+                        <h4>5. Passengers vs Total Miles</h4>
+                        <div class="graph-image-container">
+                            <div id="graph-img-5" class="plotly-graph-div"></div>
+                        </div>
+                         <a href="#" class="download-graph-btn" id="download-graph-5" download="5_passengers_vs_miles.png" style="display:none;">[↓] Download</a>
+                    </div>
+                    <div class="graph-card" id="graph-card-6">
+                        <h4>6. Monthly Passenger Heatmap</h4>
+                        <div class="graph-image-container">
+                            <div id="graph-img-6" class="plotly-graph-div"></div>
+                        </div>
+                        <a href="#" class="download-graph-btn" id="download-graph-6" download="6_monthly_heatmap_passengers.png" style="display:none;">[↓] Download</a>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+    </div> <!-- /container -->
+
+    <footer>
+        <p>© 2024 TransitVis Insights. All rights reserved.</p>
+    </footer>
+
+    <!-- **Move PapaParse Script here, right before your main application script** -->
+    <!-- This ensures Papa is defined before your script tries to use it -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" integrity="sha512-dfHqKwXRXCIFJgQ1fKP3LhWpSrtKhX5rzMQsT3/5qB1LdvNqK/BAPh0hHwL/h6D/p0vTz4z4e7Tf0938xRjEbw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <!-- Your main application script -->
+    <script>
+        // --- DOM Element References ---
+        const uploadZone = document.getElementById('upload-zone');
+        const browseBtn = document.getElementById('browse-btn');
+        const fileInput = document.createElement('input'); // Hidden file input
+        fileInput.type = 'file';
+        fileInput.multiple = true; // Allow multiple file selection
+        fileInput.accept = ".csv"; // Accept only CSV files
+
+        const fileStatusArea = document.getElementById('file-status-area');
+        const fileListUI = document.getElementById('file-list');
+        const fileSummaryUI = document.getElementById('file-summary');
+        const addMoreBtn = document.getElementById('add-more-btn');
+        const clearAllBtn = document.getElementById('clear-all-btn');
+        const generateBtn = document.getElementById('generate-btn');
+
+        const resultsSection = document.getElementById('results-section');
+        const resultsTitle = document.getElementById('results-title');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const graphGrid = document.getElementById('graph-grid');
+        const downloadAllBtn = document.getElementById('download-all-btn');
+
+        // --- Application State ---
+        let uploadedFiles = []; // Array to store { file: File, status: 'pending'/'processing'/'ready'/'error', data: [], headers: [], errorMsg: '' }
+        let combinedData = []; // Array to hold combined, cleaned data rows (like a simplified DataFrame)
+        let isProcessing = false;
+
+        // --- Constants ---
+        const MONTH_ORDER = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const REQUIRED_COLUMNS = ['Year', 'Month', 'RouteName', 'Passengers'];
+        const NUMERIC_COLS_TO_TRY = ['Passengers', 'Total Miles', 'Total Hours', 'P/Mi', 'P/Hrs', 'Revenue', 'Tokens', 'Ticket', 'Passes', 'Bills', 'Coin', 'DumpCount'];
+        const REVENUE_COMPONENTS = ['Tokens', 'Passes', 'Bills', 'Coin'];
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if PapaParse is loaded before setting up listeners that might use it
+            if (typeof Papa === 'undefined') {
+                console.error("CRITICAL ERROR: PapaParse library not loaded. CSV parsing will fail.");
+                // Optionally display an error message to the user on the page
+                alert("Error: A required library (PapaParse) failed to load. Please refresh the page or check your internet connection.");
+                // Disable UI elements that rely on PapaParse
+                browseBtn.disabled = true;
+                uploadZone.style.pointerEvents = 'none'; // Disable drag/drop
+                uploadZone.style.opacity = '0.5';
+                document.getElementById('upload-instructions').textContent = "Error loading CSV parser.";
+                return; // Stop initialization
+            }
+            setupEventListeners();
+            console.log("TransitVis Initialized");
+        });
+
+        // --- Event Listeners Setup ---
+        function setupEventListeners() {
+            // ** Drag and Drop **
+            uploadZone.addEventListener('dragenter', handleDragEnter, false);
+            uploadZone.addEventListener('dragover', handleDragOver, false);
+            uploadZone.addEventListener('dragleave', handleDragLeave, false);
+            uploadZone.addEventListener('drop', handleDrop, false);
+            // Also allow drop on the file status area when it's visible
+            fileStatusArea.addEventListener('dragenter', handleDragEnterFileArea, false);
+            fileStatusArea.addEventListener('dragover', handleDragOverFileArea, false);
+            fileStatusArea.addEventListener('dragleave', handleDragLeaveFileArea, false);
+            fileStatusArea.addEventListener('drop', handleDrop, false);
+
+
+            // Prevent default drag behavior for the whole window
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                window.addEventListener(eventName, preventDefaults, false);
+            });
+
+            // ** Button Clicks **
+            browseBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileSelect, false);
+            addMoreBtn.addEventListener('click', () => fileInput.click());
+            clearAllBtn.addEventListener('click', clearAll);
+            generateBtn.addEventListener('click', generateGraphs);
+
+            // Event delegation for remove file buttons
+            fileListUI.addEventListener('click', handleRemoveFile);
+
+            // Download buttons (setting up individual downloads happens *after* plotting)
+            downloadAllBtn.addEventListener('click', handleDownloadAll);
+        }
+
+        // --- Drag & Drop Handlers ---
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleDragEnter(e) {
+            preventDefaults(e);
+            uploadZone.classList.add('drag-over');
+            document.getElementById('upload-instructions').textContent = "Drop to Upload Files";
+        }
+         function handleDragEnterFileArea(e) { // Highlight file area too
+             preventDefaults(e);
+             fileStatusArea.style.borderColor = 'var(--accent-color)'; // Example highlight
+         }
+
+
+        function handleDragOver(e) {
+            preventDefaults(e); // Needed to allow drop
+            uploadZone.classList.add('drag-over');
+        }
+         function handleDragOverFileArea(e) {
+             preventDefaults(e);
+             fileStatusArea.style.borderColor = 'var(--accent-color)';
+         }
+
+        function handleDragLeave(e) {
+            preventDefaults(e);
+            // Check context carefully before removing class/text
+             if (e.target === uploadZone || !uploadZone.contains(e.relatedTarget)) {
+                 uploadZone.classList.remove('drag-over');
+                 document.getElementById('upload-instructions').textContent = "Drag & drop your monthly CSV files here";
+             }
+        }
+         function handleDragLeaveFileArea(e) {
+             preventDefaults(e);
+              if (e.target === fileStatusArea || !fileStatusArea.contains(e.relatedTarget)) {
+                 fileStatusArea.style.borderColor = 'var(--border-color)'; // Reset border
+             }
+         }
+
+
+        function handleDrop(e) {
+            preventDefaults(e);
+            // Reset styles for both potential drop targets
+            uploadZone.classList.remove('drag-over');
+            fileStatusArea.style.borderColor = 'var(--border-color)';
+            document.getElementById('upload-instructions').textContent = "Drag & drop your monthly CSV files here";
+
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            // TODO: Handle dropped folders (requires advanced APIs/logic)
+            const csvFiles = Array.from(files).filter(file => file.type === 'text/csv' || file.name.toLowerCase().endsWith('.csv'));
+
+            if (csvFiles.length > 0) {
+                handleFiles(csvFiles);
+            } else {
+                alert("No CSV files were dropped. Please drop CSV files.");
+            }
+        }
+
+        // --- File Selection Handler ---
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            handleFiles(Array.from(files));
+             fileInput.value = null; // Reset input value
+        }
+
+        // --- File Processing Logic ---
+        function handleFiles(filesToProcess) {
+            if (isProcessing) return;
+
+             // **Defensive Check:** Ensure PapaParse is available before proceeding
+             if (typeof Papa === 'undefined') {
+                console.error("Cannot process files: PapaParse library is not available.");
+                alert("Error: Cannot parse files because a required library is missing. Please refresh the page.");
+                return; // Prevent further processing
+             }
+
+            showUploadZone(false); // Hide initial upload view
+
+            filesToProcess.forEach(file => {
+                if (!uploadedFiles.some(f => f.file.name === file.name && f.file.size === file.size)) { // Check size too
+                    uploadedFiles.push({ file: file, status: 'pending', data: null, headers: null, errorMsg: null });
+                } else {
+                    console.log(`Skipping duplicate file: ${file.name}`);
+                }
+            });
+
+            updateFileListUI(); // Add pending files to list
+            processPendingFiles(); // Start processing them
+        }
+
+        function processPendingFiles() {
+            const pendingFiles = uploadedFiles.filter(f => f.status === 'pending');
+            if (pendingFiles.length === 0) {
+                checkGenerateButtonState(); // Check if Generate can be enabled
+                return;
+            }
+
+            isProcessing = true;
+            generateBtn.disabled = true; // Disable while processing any file
+
+            const filePromises = pendingFiles.map(fileWrapper => {
+                fileWrapper.status = 'processing';
+                updateFileListItem(fileWrapper);
+
+                return parseCsv(fileWrapper.file) // Call the parsing function
+                    .then(results => {
+                         if (!results || !results.data || results.data.length === 0 || !results.meta || !results.meta.fields) {
+                             throw new Error("Parsing returned empty or invalid data structure.");
+                         }
+                         const headers = results.meta.fields.map(f => f.trim());
+                         if (!REQUIRED_COLUMNS.every(col => headers.includes(col))) {
+                             const missing = REQUIRED_COLUMNS.filter(col => !headers.includes(col));
+                             throw new Error(`Missing required columns: ${missing.join(', ')}`);
+                         }
+
+                        fileWrapper.status = 'ready';
+                        fileWrapper.data = results.data;
+                        fileWrapper.headers = headers;
+                        fileWrapper.errorMsg = null;
+                    })
+                    .catch(error => {
+                        console.error(`Error processing ${fileWrapper.file.name}:`, error);
+                        fileWrapper.status = 'error';
+                        // Be more specific about the error type if possible
+                        if (error.message.includes("PapaParse library is not loaded")) {
+                            fileWrapper.errorMsg = "Library load error.";
+                        } else if (error.message.includes("Missing required columns")) {
+                            fileWrapper.errorMsg = error.message;
+                        } else if (error.message.includes("empty or invalid data")) {
+                            fileWrapper.errorMsg = "Empty/Invalid data.";
+                        } else if (error.message.includes("no valid data rows")) {
+                             fileWrapper.errorMsg = "No data rows.";
+                        } else if (error.message.includes("CSV Parsing Errors")) {
+                            fileWrapper.errorMsg = "CSV format error."; // Simplify for UI
+                        } else {
+                            fileWrapper.errorMsg = "Parsing failed."; // General error
+                        }
+                        fileWrapper.data = null;
+                        fileWrapper.headers = null;
+                    })
+                    .finally(() => {
+                        updateFileListItem(fileWrapper);
+                    });
+            });
+
+            Promise.allSettled(filePromises).then(() => {
+                isProcessing = false;
+                checkGenerateButtonState(); // Re-check button state after all processing
+                updateFileSummary();
+            });
+        }
+
+        function parseCsv(file) {
+            // **Added Check:** Ensure Papa object exists before using it.
+            if (typeof Papa === 'undefined') {
+                console.error("PapaParse is not defined inside parseCsv!");
+                // Return a rejected promise so the calling code (.catch) handles the error consistently
+                return Promise.reject(new Error("PapaParse library is not loaded."));
+            }
+
+            // Proceed with PapaParse if it's defined
+            return new Promise((resolve, reject) => {
+                Papa.parse(file, {
+                    worker: true, // Use web workers for better performance with large files
+                    header: true, // Assumes first row is header
+                    skipEmptyLines: 'greedy', // Skip lines that are truly empty or just whitespace
+                    dynamicTyping: false, // Keep everything as string initially for better cleaning control
+                    complete: (results) => {
+                        if (results.errors && results.errors.length > 0) {
+                            // Aggregate error messages
+                            const errorMessages = results.errors.map(err => `Row ${err.row || '?'}: ${err.message || 'Unknown parse error'}`).join('; ');
+                            console.error(`PapaParse encountered errors in ${file.name}:`, results.errors);
+                            reject(new Error(`CSV Parsing Errors: ${errorMessages}`));
+                        } else if (!results.data || results.data.length === 0) {
+                             console.warn(`PapaParse found no data rows in ${file.name}.`);
+                             reject(new Error("CSV contains no valid data rows after parsing."));
+                        } else if (!results.meta || !results.meta.fields || results.meta.fields.length === 0) {
+                             console.error(`PapaParse failed to extract headers from ${file.name}.`);
+                             reject(new Error("Could not read headers from CSV."));
+                        }
+                        else {
+                            console.log(`Successfully parsed ${file.name}, ${results.data.length} rows, headers: ${results.meta.fields.join(', ')}`);
+                            resolve(results); // Resolve with the full results object
+                        }
+                    },
+                    error: (error, file) => {
+                         // Handle file reading errors or worker errors
+                         console.error(`PapaParse File Reading/Worker Error for ${file?.name}:`, error);
+                         reject(new Error(`PapaParse File Reading Error: ${error?.message || 'Unknown error'}`));
+                    }
+                });
+            });
+        }
+
+
+        // --- UI Update Functions ---
+        function showUploadZone(show) {
+            if (show) {
+                uploadZone.style.display = 'block';
+                fileStatusArea.style.display = 'none';
+            } else {
+                uploadZone.style.display = 'none';
+                fileStatusArea.style.display = 'block';
+            }
+        }
+
+        function updateFileListUI() {
+            fileListUI.innerHTML = ''; // Clear existing list
+            uploadedFiles.forEach(fileWrapper => {
+                const li = document.createElement('li');
+                // Use a more robust data attribute or ID if filenames might collide badly
+                li.dataset.filename = fileWrapper.file.name; // Keep using filename for now
+
+                const nameSpan = document.createElement('span');
+                 nameSpan.classList.add('file-name');
+                nameSpan.textContent = fileWrapper.file.name;
+                li.appendChild(nameSpan);
+
+                const statusSpan = document.createElement('span');
+                statusSpan.classList.add('file-status');
+                li.appendChild(statusSpan);
+
+                const removeSpan = document.createElement('span');
+                removeSpan.textContent = '✖';
+                removeSpan.classList.add('remove-file');
+                removeSpan.title = 'Remove File';
+                li.appendChild(removeSpan);
+
+                fileListUI.appendChild(li);
+                updateFileListItem(fileWrapper); // Set initial status text
+            });
+            updateFileSummary();
+            checkGenerateButtonState();
+        }
+
+        function updateFileListItem(fileWrapper) {
+             // Need robust selector, especially if filenames have special CSS characters
+            const li = fileListUI.querySelector(`li[data-filename="${CSS.escape(fileWrapper.file.name)}"]`);
+            if (!li) {
+                // console.warn(`Could not find list item for file: ${fileWrapper.file.name}`); // Might happen during rapid removal
+                return;
+            }
+
+            const statusSpan = li.querySelector('.file-status');
+            statusSpan.innerHTML = ''; // Clear previous content
+
+            switch (fileWrapper.status) {
+                case 'processing':
+                    statusSpan.innerHTML = '<span class="spinner" title="Processing...">⏳</span> Processing...';
+                    statusSpan.className = 'file-status pending'; // Use pending style during processing
+                    break;
+                case 'ready':
+                    statusSpan.innerHTML = '<span class="ready" title="Ready">✅</span> Ready';
+                     statusSpan.className = 'file-status ready';
+                    break;
+                case 'error':
+                    // Provide more details on hover if available
+                    const title = fileWrapper.errorMsg ? `Error: ${fileWrapper.errorMsg}` : 'An error occurred';
+                    statusSpan.innerHTML = `<span class="error" title="${title}">❌ Error</span>`;
+                    statusSpan.className = 'file-status error';
+                    break;
+                case 'pending':
+                default: // Should ideally only be 'pending'
+                    statusSpan.innerHTML = '<span class="pending" title="Waiting...">...</span> Pending';
+                    statusSpan.className = 'file-status pending';
+                    break;
+            }
+        }
+
+        function updateFileSummary() {
+            const totalCount = uploadedFiles.length;
+            const readyCount = uploadedFiles.filter(f => f.status === 'ready').length;
+            const errorCount = uploadedFiles.filter(f => f.status === 'error').length;
+            const processingCount = uploadedFiles.filter(f => f.status === 'processing').length;
+            const pendingCount = uploadedFiles.filter(f => f.status === 'pending').length;
+
+            let summary = `${totalCount} file(s) total. `;
+            if (readyCount > 0) summary += `${readyCount} ready. `;
+            if (errorCount > 0) summary += `<span style="color:var(--error-color);">${errorCount} error(s).</span> `;
+            if (processingCount > 0) summary += `${processingCount} processing... `;
+            if (pendingCount > 0 && processingCount === 0) summary += `${pendingCount} pending. `; // Show pending only if nothing is actively processing
+
+            fileSummaryUI.innerHTML = summary.trim(); // Use innerHTML for the error span
+        }
+
+        function checkGenerateButtonState() {
+            const readyFiles = uploadedFiles.some(f => f.status === 'ready');
+            const isStillProcessing = uploadedFiles.some(f => f.status === 'processing');
+            generateBtn.disabled = isStillProcessing || !readyFiles;
+        }
+
+        // --- File Removal and Clearing ---
+        function handleRemoveFile(e) {
+            if (e.target.classList.contains('remove-file')) {
+                const li = e.target.closest('li');
+                if (li && li.dataset.filename) {
+                    const filenameToRemove = li.dataset.filename;
+                    uploadedFiles = uploadedFiles.filter(f => f.file.name !== filenameToRemove);
+                    updateFileListUI(); // Redraw the list
+                    if (uploadedFiles.length === 0) {
+                        clearAll(); // Go back to initial state if no files are left
+                    } else {
+                        checkGenerateButtonState(); // Re-check generate button state
+                    }
+                }
+            }
+        }
+
+        function clearAll() {
+            uploadedFiles = [];
+            combinedData = [];
+            updateFileListUI(); // Clears the list UI
+            showUploadZone(true); // Show the drag/drop area again
+            resultsSection.style.display = 'none'; // Hide results section
+            resultsTitle.style.display = 'none';
+            graphGrid.style.display = 'none';
+            loadingIndicator.style.display = 'none';
+            downloadAllBtn.style.display = 'none';
+            clearGraphPlaceholders(); // Clear out any old graphs/errors
+             generateBtn.disabled = true; // Ensure generate is disabled
+             fileSummaryUI.textContent = "0 files selected."; // Reset summary text
+        }
+
+        function clearGraphPlaceholders() {
+             for (let i = 1; i <= 6; i++) {
+               const graphDiv = document.getElementById(`graph-img-${i}`);
+               const card = document.getElementById(`graph-card-${i}`);
+               const downloadLink = document.getElementById(`download-graph-${i}`);
+
+               if (graphDiv) {
+                   try { Plotly.purge(graphDiv); } catch(e) { /* Ignore if no plot exists */ }
+                   graphDiv.innerHTML = ''; // Clear any residual content
+               }
+               if (card) {
+                   // Reset card appearance if it was an error card
+                   card.classList.remove('error-card');
+                   // Find and restore original title if needed (more robust might be to store original titles)
+                   const h4 = card.querySelector('h4');
+                   if (h4 && h4.textContent.includes(': Error')) {
+                      // Example: Extract original title or set a default
+                       const originalTitle = h4.textContent.split(': Error')[0];
+                       h4.textContent = originalTitle || `${i}. Graph Title Placeholder`;
+                   }
+                   // Ensure the graph image container is present if it was removed
+                   if (!card.querySelector('.graph-image-container')) {
+                        const container = document.createElement('div');
+                        container.className = 'graph-image-container';
+                        container.innerHTML = `<div id="graph-img-${i}" class="plotly-graph-div"></div>`;
+                        // Insert it after the h4
+                        if(h4) h4.after(container);
+                   }
+                    // Ensure download link is present if it was removed
+                   if (!card.querySelector('.download-graph-btn') && downloadLink) {
+                        card.appendChild(downloadLink); // Re-append if removed
+                   }
+               }
+               // Hide individual download buttons initially
+               if(downloadLink) downloadLink.style.display = 'none';
+             }
+              // Ensure the grid itself is hidden
+              graphGrid.style.display = 'none';
+        }
+
+
+        // --- Data Cleaning and Combining ---
+        function safeToNumericJS(value) {
+            if (value === null || value === undefined) return NaN;
+            // Handle boolean explicitly if needed: return value ? 1 : 0;
+            if (typeof value === 'number') return value; // Already a number
+            if (typeof value !== 'string') return NaN; // Not a string or number
+
+            const cleanedValue = value.replace(/,/g, '').trim(); // Remove commas, trim whitespace
+             if (cleanedValue === '') return NaN; // Empty string becomes NaN
+
+             // Handle common non-numeric placeholders
+            if (['-', '#DIV/0!', '#N/A', 'N/A', 'NULL', 'UNDEFINED'].includes(cleanedValue.toUpperCase())) {
+                return NaN;
+            }
+            // Handle potential currency symbols (basic example: remove leading $)
+            const noCurrency = cleanedValue.replace(/^\$/, '');
+
+            const num = Number(noCurrency); // Attempt conversion
+            return isNaN(num) ? NaN : num; // Return number or NaN
+        }
+
+        function cleanPercentageJS(value) {
+            if (value === null || value === undefined) return NaN;
+            let cleanedValue = String(value).replace(/%/g, '').trim(); // Remove %, convert to string, trim
+             if (cleanedValue === '') return NaN; // Empty string becomes NaN
+            const num = safeToNumericJS(cleanedValue); // Use the robust numeric conversion
+            // Divide by 100 only if it's a valid number
+            return isNaN(num) ? NaN : num / 100.0;
+        }
+
+        // Finds a column like '%DIFF FROM YY' related to a base column name
+        function findDiffColumnJS(headers, baseColName) {
+             // Prioritize specific comparison year if standards emerge (e.g., '22')
+             const patternPreferred = `%DIFF FROM 22`;
+             const patternGeneral = `%DIFF FROM`; // General pattern
+
+             let foundGeneral = null;
+             // Find the index of the base column first for context/proximity check
+             const baseIndex = headers.indexOf(baseColName);
+
+             if (baseIndex !== -1) {
+                 // Check column immediately *after* the base column first (common layout)
+                 if (baseIndex + 1 < headers.length) {
+                     const nextCol = headers[baseIndex + 1];
+                     // Prefer specific year diff if it's immediately next
+                     if (nextCol.includes(baseColName) && nextCol.includes(patternPreferred)) return nextCol;
+                     // If not preferred, check for general diff immediately next
+                     if (nextCol.includes(baseColName) && nextCol.includes(patternGeneral)) foundGeneral = nextCol;
+                 }
+             }
+
+             // If not found immediately after, search *all* headers
+             // Prioritize the preferred pattern anywhere if found
+             for (const header of headers) {
+                 if (header.includes(baseColName) && header.includes(patternPreferred)) {
+                     return header; // Found preferred, return immediately
+                 }
+                 // If not preferred, keep track of the first general match found
+                 if (!foundGeneral && header.includes(baseColName) && header.includes(patternGeneral)) {
+                     foundGeneral = header;
+                 }
+             }
+
+             // If preferred wasn't found anywhere, return the general match (if any)
+             if (foundGeneral) {
+                // console.log(`Using general diff column '${foundGeneral}' for base '${baseColName}'`);
+                return foundGeneral;
+             }
+
+             // If neither preferred nor general diff column found
+             console.warn(`No suitable '%DIFF FROM' column found in headers for base column: ${baseColName}`);
+             return null; // Indicate no suitable diff column found
+        }
+
+
+        function processAndCombineData() {
+            console.log("Starting data processing and combination...");
+            combinedData = []; // Reset combined data
+
+            // Filter only files that parsed successfully and have data/headers
+            const readyFilesData = uploadedFiles.filter(f => f.status === 'ready' && f.data && f.headers);
+
+            if (readyFilesData.length === 0) {
+                console.error("No 'ready' files with data available for processing.");
+                return { success: false, message: "No valid data files found.", latestYear: null, previousYear: null, yearsPresent: [] };
+            }
+
+            let latestYearInData = -Infinity;
+            let allYears = new Set();
+
+            // --- Determine consistent diff column names ---
+            // Use the headers from the *first* successfully parsed file as the reference standard
+            // This assumes all uploaded files *should* follow the same structure regarding diff columns
+            let pmiDiffColName = null;
+            let phrsDiffColName = null;
+            if (readyFilesData[0].headers) {
+                 pmiDiffColName = findDiffColumnJS(readyFilesData[0].headers, 'P/Mi');
+                 phrsDiffColName = findDiffColumnJS(readyFilesData[0].headers, 'P/Hrs');
+                 console.log(`Using Diff Columns determined from first file: P/Mi -> ${pmiDiffColName || 'None found'}, P/Hrs -> ${phrsDiffColName || 'None found'}`);
+            } else {
+                console.warn("Could not determine diff column names: Headers missing from the first 'ready' file.");
+            }
+            // --- End Diff Column Determination ---
+
+
+            // Iterate through each successfully parsed file
+            for (const fileWrapper of readyFilesData) {
+                const headers = fileWrapper.headers; // Use the headers specific to *this* file for data access
+                let currentYear = NaN; // Track year within the file
+                let currentMonth = ''; // Track month within the file
+
+                // Iterate through each row in the file's data
+                for (const row of fileWrapper.data) {
+                    if (!row) continue; // Skip fundamentally empty rows
+
+                    // --- Filter out non-data/total rows aggressively ---
+                    // Check for header repetition, blank RouteName, or specific total/summary keywords
+                    const routeNameStr = String(row.RouteName || '').trim();
+                    if (row.ORDER === 'ORDER' || !routeNameStr ||
+                        routeNameStr.match(/^(Sub Total:|MB Total:|Grand Total:|Demand Response Total:|Others|TOTAL|Route Name)/i))
+                     {
+                        continue; // Skip this row
+                    }
+
+                    // --- Get Year and Month, attempting to carry forward if missing in a row ---
+                    const yearVal = safeToNumericJS(row.Year);
+                    if (!isNaN(yearVal) && yearVal > 1900 && yearVal < 2100) { // Basic sanity check for year
+                        currentYear = parseInt(yearVal);
+                        allYears.add(currentYear); // Add to the set of all years found
+                        latestYearInData = Math.max(latestYearInData, currentYear); // Update latest year seen
+                    } else if (isNaN(currentYear)) {
+                        // console.warn(`Skipping row in ${fileWrapper.file.name}: Missing or invalid Year, and no current year context. Row:`, row);
+                        continue; // Cannot proceed without a valid year context
+                    }
+
+                    // Get month, carry forward if blank
+                    const monthVal = row.Month ? String(row.Month).trim() : '';
+                    if (monthVal && MONTH_ORDER.includes(monthVal)) {
+                         currentMonth = monthVal; // Update current month context
+                    } else if (!currentMonth) {
+                         // console.warn(`Skipping row in ${fileWrapper.file.name}: Missing or invalid Month, and no current month context. Row:`, row);
+                         continue; // Cannot proceed without valid month context
+                    }
+                    // --- End Year/Month Handling ---
+
+                    // Create the structured row for combined data
+                    const processedRow = {
+                        Year: currentYear,
+                        Month: currentMonth,
+                        RouteName: routeNameStr // Use the trimmed route name
+                    };
+
+                    // Process numeric columns dynamically based on actual headers *in this file*
+                    NUMERIC_COLS_TO_TRY.forEach(col => {
+                        // Check if the column exists in *this specific file's* headers before trying to access it
+                        processedRow[col] = headers.includes(col) ? safeToNumericJS(row[col]) : NaN;
+                    });
+
+                    // Process diff columns using the *consistently determined names* but check existence in *this file*
+                    processedRow['P/Mi_%DIFF'] = (pmiDiffColName && headers.includes(pmiDiffColName)) ? cleanPercentageJS(row[pmiDiffColName]) : NaN;
+                    processedRow['P/Hrs_%DIFF'] = (phrsDiffColName && headers.includes(phrsDiffColName)) ? cleanPercentageJS(row[phrsDiffColName]) : NaN;
+
+
+                    // Add the processed row to combinedData only if core data (e.g., Passengers) is valid
+                    if (!isNaN(processedRow.Passengers)) { // Or check other essential numeric fields if needed
+                         combinedData.push(processedRow);
+                    } else {
+                        // console.warn(`Skipping row due to invalid 'Passengers': Year=${currentYear}, Month=${currentMonth}, Route=${routeNameStr}`);
+                    }
+                } // End row loop
+            } // End file loop
+
+            // Determine previous year based on the latest year found across all files
+            const previousYearInData = latestYearInData !== -Infinity ? latestYearInData - 1 : -Infinity;
+            const yearsArray = Array.from(allYears).sort((a,b) => a - b); // Sort years numerically
+
+            console.log(`Processing complete. Combined ${combinedData.length} valid data rows.`);
+            console.log(`Years found: ${yearsArray.join(', ') || 'None'}`);
+            if (latestYearInData !== -Infinity) {
+                console.log(`Latest Year: ${latestYearInData}, Previous Year for comparison: ${previousYearInData}`);
+            } else {
+                console.log("No valid year data found.");
+            }
+
+
+            if (combinedData.length === 0) {
+                 console.error("No valid data rows could be extracted after processing all files.");
+                 return { success: false, message: "No processable data rows found in the files.", latestYear: null, previousYear: null, yearsPresent: [] };
+            }
+
+            // Return success status and context
+            return {
+                success: true,
+                message: `Successfully combined ${combinedData.length} rows.`,
+                latestYear: latestYearInData === -Infinity ? null : latestYearInData,
+                previousYear: previousYearInData === -Infinity ? null : previousYearInData,
+                yearsPresent: yearsArray
+            };
+        }
+
+        // --- Graph Generation ---
+        async function generateGraphs() {
+            if (isProcessing) {
+                console.warn("Generate Graphs called while processing is already active.");
+                return;
+            }
+            if (uploadedFiles.filter(f => f.status === 'ready').length === 0) {
+                alert("Please upload and successfully process at least one CSV file.");
+                return;
+            }
+
+
+            // 1. Clear previous results and show loader
+            clearGraphPlaceholders(); // Important to clear errors/old plots first
+            resultsSection.style.display = 'block'; // Show the whole section
+            resultsTitle.style.display = 'none'; // Hide title until data processing done
+            graphGrid.style.display = 'none'; // Hide grid until plots are ready (or errors occur)
+            loadingIndicator.style.display = 'block'; // Show spinner
+            downloadAllBtn.style.display = 'none'; // Hide download all button
+            generateBtn.disabled = true; // Disable generate button during processing
+            isProcessing = true; // Set processing flag
+
+            // Use setTimeout to allow UI update (show loader) before heavy processing
+            await new Promise(resolve => setTimeout(resolve, 50)); // Small delay
+
+            try {
+                // 2. Process and Combine Data
+                console.log("Calling processAndCombineData...");
+                const processResult = processAndCombineData();
+                console.log("processAndCombineData result:", processResult);
+
+
+                if (!processResult.success || combinedData.length === 0) {
+                    // Display error message if data processing failed
+                    alert(`Data Processing Error: ${processResult.message || "Could not process data."}\nPlease check file formats and content.`);
+                    loadingIndicator.style.display = 'none'; // Hide loader
+                    resultsTitle.style.display = 'block'; // Show title maybe? Or hide section?
+                    resultsTitle.textContent = "Data Processing Failed";
+                    isProcessing = false; // Reset flag
+                    // Keep generate disabled if no files are ready, otherwise enable
+                     checkGenerateButtonState();
+                    return;
+                }
+
+                // 3. Data processed successfully, prepare for plotting
+                resultsTitle.style.display = 'block'; // Show "Generated Insights" title
+                resultsTitle.textContent = "Generated Insights"; // Reset title text
+                graphGrid.style.display = 'grid'; // Show the grid container *now* before plotting starts
+
+                // 4. Define plot functions to call
+                 const plotTasks = [
+                    () => plotGraph1(combinedData, processResult.latestYear, processResult.previousYear, processResult.yearsPresent),
+                    () => plotGraph2(combinedData, processResult.latestYear),
+                    () => plotGraph3(combinedData, processResult.latestYear, processResult.previousYear, processResult.yearsPresent),
+                    () => plotGraph4(combinedData, processResult.latestYear),
+                    () => plotGraph5(combinedData), // Assuming this doesn't need specific years
+                    () => plotGraph6(combinedData, processResult.latestYear)
+                ];
+
+                 // 5. Execute plotting tasks sequentially or in parallel (using allSettled for robustness)
+                 console.log("Starting plot generation...");
+                 const plotResults = await Promise.allSettled(plotTasks.map(task => task()));
+
+                 plotResults.forEach((result, index) => {
+                     if (result.status === 'rejected') {
+                         console.error(`Plotting failed for Graph ${index + 1}:`, result.reason);
+                         // Error display is handled within the individual plot functions via displayGraphError
+                     } else {
+                         console.log(`Plotting succeeded for Graph ${index + 1}`);
+                     }
+                 });
+
+
+                console.log("All plotting attempts finished.");
+                downloadAllBtn.style.display = 'block'; // Show download all button *after* plots attempted
+
+            } catch (error) {
+                // Catch unexpected errors during the overall generate process
+                console.error("Unexpected error during generateGraphs:", error);
+                alert("An unexpected error occurred while generating the graphs. Check the console for details.");
+                 resultsTitle.style.display = 'block';
+                 resultsTitle.textContent = "Graph Generation Error";
+
+            } finally {
+                // 6. Final cleanup regardless of success or failure
+                loadingIndicator.style.display = 'none'; // Hide loader
+                isProcessing = false; // Reset processing flag
+                checkGenerateButtonState(); // Re-evaluate generate button state
+                console.log("generateGraphs function finished.");
+            }
+        }
+
+
+        // --- Plotting Functions (Using Plotly.js) ---
+
+        // Helper to display errors within a specific graph card
+        function displayGraphError(cardId, title, message) {
+            const card = document.getElementById(cardId);
+            const graphDiv = document.getElementById(cardId.replace('card-', 'graph-img-')); // Find associated graph div
+            const downloadLink = document.getElementById(cardId.replace('card-', 'download-graph-'));
+
+            if (card) {
+                console.warn(`Displaying error for ${cardId}: ${message}`);
+                // Clear existing content inside the card more carefully
+                const h4 = card.querySelector('h4');
+                const container = card.querySelector('.graph-image-container');
+
+                if (h4) h4.textContent = `${title}: Error`; // Update title to indicate error
+
+                // Replace graph container content with error message
+                if (container) {
+                     container.innerHTML = `<p style="padding: 20px; text-align: center; color: var(--error-color); font-size: 0.9em;">${message}</p>`;
+                } else {
+                    // If container somehow missing, add error paragraph directly
+                     const errorP = document.createElement('p');
+                     errorP.style.cssText = "padding: 20px; text-align: center; color: var(--error-color); font-size: 0.9em;";
+                     errorP.textContent = message;
+                     if (h4) h4.after(errorP); else card.prepend(errorP);
+                }
+
+                card.classList.add('error-card'); // Add error styling class
+            } else {
+                 console.error(`Cannot display error, card not found: ${cardId}`);
+            }
+
+            if (graphDiv) {
+                  try { Plotly.purge(graphDiv); } catch(e){ /* ignore */ } // Clear any existing Plotly instance
+             }
+            if (downloadLink) {
+                 downloadLink.style.display = 'none'; // Hide download link for errored graph
+            }
+
+            // Ensure the main grid container is visible even if individual plots fail
+            if (graphGrid.style.display !== 'grid') {
+                 graphGrid.style.display = 'grid';
+            }
+        }
+
+
+        async function plotGraph1(data, latestYear, previousYear, yearsPresent) {
+            const graphId = 'graph-img-1';
+            const cardId = 'graph-card-1';
+            const baseTitle = "1. Monthly Ridership Trend"; // Use base title for errors
+            const downloadLinkId = 'download-graph-1';
+
+            // Check if necessary years are available *before* processing
+            if (!latestYear || !previousYear || !yearsPresent.includes(latestYear) || !yearsPresent.includes(previousYear)) {
+                const missingYears = [];
+                if (!latestYear || !yearsPresent.includes(latestYear)) missingYears.push(latestYear || 'Latest');
+                if (!previousYear || !yearsPresent.includes(previousYear)) missingYears.push(previousYear || 'Previous');
+                displayGraphError(cardId, baseTitle, `Data missing for required comparison year(s): ${missingYears.join(' or ')}.`);
+                return Promise.reject(new Error('Missing required years for Graph 1')); // Reject promise for error tracking
+            }
+
+            try {
+                const monthlyTotals = {}; // { 'Year-Month': totalPassengers }
+                let hasDataForPlot = false;
+
+                // Aggregate data only for the two relevant years
+                data.forEach(row => {
+                    if (row && (row.Year === latestYear || row.Year === previousYear) && row.Month && !isNaN(row.Passengers)) {
+                        const key = `${row.Year}-${row.Month}`;
+                        monthlyTotals[key] = (monthlyTotals[key] || 0) + row.Passengers;
+                         if(monthlyTotals[key] > 0) hasDataForPlot = true; // Flag if we find any non-zero passenger data
+                    }
+                });
+
+                 if (!hasDataForPlot) {
+                     displayGraphError(cardId, baseTitle, `No passenger data found for ${previousYear} or ${latestYear}.`);
+                     return Promise.reject(new Error('No data for Graph 1'));
+                 }
+
+                const traces = [];
+                [previousYear, latestYear].forEach((year) => {
+                    const x_months = MONTH_ORDER; // Use fixed month order
+                    const y_passengers = MONTH_ORDER.map(month => {
+                        const key = `${year}-${month}`;
+                        return monthlyTotals[key] || 0; // Default to 0 if no data for that month
+                    });
+                    traces.push({
+                        x: x_months,
+                        y: y_passengers,
+                        mode: 'lines+markers',
+                        name: String(year),
+                        type: 'scatter',
+                        hovertemplate: `<b>${year} %{x}</b><br>Passengers: %{y:,}<extra></extra>` // Custom hover text
+                    });
+                });
+
+                const layout = {
+                    title: `Total Monthly Passengers (${previousYear} vs ${latestYear})`,
+                    xaxis: {
+                        title: 'Month',
+                        tickangle: -45,
+                        type: 'category', // Crucial for correct month ordering
+                        automargin: true
+                    },
+                    yaxis: {
+                        title: 'Total Passengers',
+                        rangemode: 'tozero', // Ensure Y-axis starts at 0
+                         tickformat: ',' // Format ticks with commas
+                    },
+                    margin: { l: 70, r: 30, t: 60, b: 80 }, // Adjusted margins
+                    height: 400, // Consider dynamic height if needed
+                    autosize: true,
+                    legend: { x: 0.05, y: 0.95 }, // Position legend top-left inside plot area
+                    hovermode: 'x unified' // Show hover for all traces at a given x
+                };
+
+                await Plotly.newPlot(graphId, traces, layout, {responsive: true});
+                setupIndividualDownload(graphId, downloadLinkId, `1_monthly_ridership_${previousYear}_vs_${latestYear}.png`);
+                return Promise.resolve(); // Indicate success
+
+            } catch (e) {
+                console.error(`Error plotting Graph 1 (${baseTitle}):`, e);
+                displayGraphError(cardId, baseTitle, `Plotting error: ${e.message}`);
+                 return Promise.reject(e); // Propagate error
+            }
+        }
+
+        async function plotGraph2(data, latestYear) {
+            const graphId = 'graph-img-2';
+            const cardId = 'graph-card-2';
+            const baseTitle = "2. Top & Bottom Routes by Avg P/Hrs";
+             const downloadLinkId = 'download-graph-2';
+             let filename = `2_avg_p_hrs_${latestYear}.png`; // Default filename
+
+             // Check if latest year data exists
+             if (!latestYear) {
+                 displayGraphError(cardId, baseTitle, "Latest year not identified for analysis.");
+                 return Promise.reject(new Error('Missing latest year for Graph 2'));
+             }
+
+            try {
+                // Filter data for the latest year and valid P/Hrs
+                const latestYearData = data.filter(r => r && r.Year === latestYear && r['P/Hrs'] !== null && !isNaN(r['P/Hrs']));
+                if (latestYearData.length === 0) {
+                    displayGraphError(cardId, baseTitle, `No data with valid 'P/Hrs' found for year ${latestYear}.`);
+                    return Promise.reject(new Error('No valid P/Hrs data for Graph 2'));
+                }
+
+                // Calculate average P/Hrs per route for the latest year
+                const routeAvgs = {}; // { RouteName: { total: number, count: number } }
+                latestYearData.forEach(row => {
+                    if (!routeAvgs[row.RouteName]) routeAvgs[row.RouteName] = { total: 0, count: 0 };
+                    routeAvgs[row.RouteName].total += row['P/Hrs'];
+                    routeAvgs[row.RouteName].count++;
+                });
+
+                // Convert to array, calculate average, filter out zero counts, and sort by average P/Hrs
+                const avgPHrs = Object.entries(routeAvgs)
+                    .map(([name, { total, count }]) => ({ RouteName: name, AvgPHrs: count > 0 ? total / count : 0 }))
+                    .filter(d => d.AvgPHrs > 0) // Filter out routes with zero average P/Hrs if desired
+                    .sort((a, b) => a.AvgPHrs - b.AvgPHrs); // Sort ascending by Avg P/Hrs
+
+                if (avgPHrs.length === 0) {
+                    displayGraphError(cardId, baseTitle, `No routes found with positive average P/Hrs for ${latestYear}.`);
+                    return Promise.reject(new Error('No routes after averaging P/Hrs for Graph 2'));
+                }
+
+                let plotData = [];
+                let plotTitle = '';
+                const N = 5; // Number of top/bottom routes to show
+
+                // Determine data to plot: top/bottom N or all if fewer than 2*N routes total
+                if (avgPHrs.length >= 2 * N) {
+                    const bottomN = avgPHrs.slice(0, N);
+                    const topN = avgPHrs.slice(-N);
+                    plotData = [...bottomN, ...topN].sort((a, b) => a.AvgPHrs - b.AvgPHrs); // Ensure combined data is sorted for plotting
+                    plotTitle = `Top ${N} & Bottom ${N} Routes by Average P/Hrs (${latestYear})`;
+                     filename = `2_top_bottom_${N}_p_hrs_${latestYear}.png`;
+                } else {
+                    plotData = avgPHrs; // Plot all routes
+                    plotTitle = `Average P/Hrs (${plotData.length} Routes) (${latestYear})`;
+                    console.log(`Plot 2: Less than ${2 * N} routes, plotting all ${plotData.length}.`);
+                }
+
+                 // Define colors: Red for bottom half, Green for top half (adjust if not Top/Bottom N)
+                 const colors = plotData.map((d, index) => {
+                     // If showing Top/Bottom N, color based on index relative to N
+                     if (avgPHrs.length >= 2 * N) {
+                         return index < N ? 'rgba(214, 39, 40, 0.7)' : 'rgba(44, 160, 44, 0.7)'; // Red bottom, Green top
+                     }
+                     // If showing all, maybe color based on median? Or use a single color?
+                     // Example: single color for simplicity when showing all
+                     return 'rgba(31, 119, 180, 0.7)'; // Default blue
+                 });
+
+                const trace = {
+                    y: plotData.map(d => d.RouteName),
+                    x: plotData.map(d => d.AvgPHrs),
+                    type: 'bar',
+                    orientation: 'h',
+                    marker: { color: colors },
+                    hovertemplate: `<b>%{y}</b><br>Avg P/Hrs: %{x:.2f}<extra></extra>`
+                };
+
+                const layout = {
+                    title: plotTitle,
+                    yaxis: {
+                        title: '', // No Y-axis title, route names are clear
+                        automargin: true, // Adjust margin to fit labels
+                        tickfont: { size: 10 }
+                     },
+                    xaxis: { title: 'Average Passengers per Hour (P/Hrs)' },
+                    // Adjust margins, especially left margin for potentially long route names
+                    margin: { l: 150, r: 20, t: 50, b: 50 },
+                    // Dynamic height based on number of bars, with min/max
+                    height: Math.max(400, Math.min(800, plotData.length * 25 + 100)),
+                    autosize: true
+                };
+
+                await Plotly.newPlot(graphId, [trace], layout, {responsive: true});
+                 setupIndividualDownload(graphId, downloadLinkId, filename);
+                 return Promise.resolve();
+
+            } catch (e) {
+                console.error(`Error plotting Graph 2 (${baseTitle}):`, e);
+                displayGraphError(cardId, baseTitle, `Plotting error: ${e.message}`);
+                 return Promise.reject(e);
+            }
+        }
+
+         async function plotGraph3(data, latestYear, previousYear, yearsPresent) {
+            const graphId = 'graph-img-3';
+            const cardId = 'graph-card-3';
+            const baseTitle = "3. YoY Change in P/Mi Efficiency";
+            const diffCol = 'P/Mi_%DIFF'; // The column holding the pre-calculated percentage difference
+             const downloadLinkId = 'download-graph-3';
+
+            // Check if necessary years are available
+             if (!latestYear || !previousYear || !yearsPresent.includes(latestYear) || !yearsPresent.includes(previousYear)) {
+                const missingYears = [];
+                 if (!latestYear || !yearsPresent.includes(latestYear)) missingYears.push(latestYear || 'Latest');
+                 if (!previousYear || !yearsPresent.includes(previousYear)) missingYears.push(previousYear || 'Previous');
+                 displayGraphError(cardId, baseTitle, `Data missing for required comparison year(s): ${missingYears.join(' or ')}.`);
+                 return Promise.reject(new Error('Missing required years for Graph 3'));
+             }
+
+             try {
+                 // Filter data for the latest year and rows where the specific diff column is a valid number
+                 const latestYearDataWithDiff = data.filter(r =>
+                     r && r.Year === latestYear && r[diffCol] !== null && !isNaN(r[diffCol])
+                 );
+
+                 if (latestYearDataWithDiff.length === 0) {
+                     // Check if the diff column was expected but not found in the data
+                     const firstFileHeaders = uploadedFiles.find(f => f.status === 'ready')?.headers;
+                      const diffColExpected = firstFileHeaders ? findDiffColumnJS(firstFileHeaders, 'P/Mi') : null;
+                      let errorMsg = `No valid '${diffCol}' data found for year ${latestYear}.`;
+                      if (diffColExpected && !firstFileHeaders?.includes(diffColExpected)) {
+                           errorMsg += ` Expected column '${diffColExpected}' not found in headers.`;
+                      } else if (!diffColExpected) {
+                          errorMsg += ` No suitable '%DIFF FROM' column for P/Mi identified.`;
+                      }
+                     displayGraphError(cardId, baseTitle, errorMsg);
+                     return Promise.reject(new Error('No valid P/Mi %DIFF data for Graph 3'));
+                 }
+
+                 // Calculate the average % change per route for the latest year
+                 const routeChanges = {}; // { RouteName: { total: number, count: number } }
+                 latestYearDataWithDiff.forEach(row => {
+                     if (!routeChanges[row.RouteName]) routeChanges[row.RouteName] = { total: 0, count: 0 };
+                     // Ensure the value is treated as a number before adding
+                     const changeValue = Number(row[diffCol]);
+                     if (!isNaN(changeValue)) {
+                         routeChanges[row.RouteName].total += changeValue;
+                         routeChanges[row.RouteName].count++;
+                     }
+                 });
+
+                 // Convert to array, calculate average, filter non-counts, sort by change value
+                 const avgChanges = Object.entries(routeChanges)
+                     .filter(([name, { count }]) => count > 0) // Ensure we have data for the route
+                     .map(([name, { total, count }]) => ({ RouteName: name, AvgChange: total / count }))
+                     .sort((a, b) => a.AvgChange - b.AvgChange); // Sort ascending by average change
+
+                 if (avgChanges.length === 0) {
+                     displayGraphError(cardId, baseTitle, `No routes found after averaging valid ${diffCol} data for ${latestYear}.`);
+                     return Promise.reject(new Error('No routes after averaging P/Mi %DIFF for Graph 3'));
+                 }
+
+                 const trace = {
+                     x: avgChanges.map(d => d.RouteName),
+                     y: avgChanges.map(d => d.AvgChange), // Already a percentage (e.g., 0.05 for 5%)
+                     type: 'bar',
+                     marker: {
+                         color: avgChanges.map(d => d.AvgChange >= 0 ? 'rgba(44, 160, 44, 0.7)' : 'rgba(214, 39, 40, 0.7)') // Green for increase/no change, Red for decrease
+                     },
+                     hovertemplate: `<b>%{x}</b><br>Avg Change: %{y:.1%}<extra></extra>` // Format hover as percentage
+                 };
+
+                 const layout = {
+                     title: `Avg. YoY Change (${latestYear} vs ${previousYear}) in Passengers per Mile (P/Mi)`,
+                     xaxis: {
+                         title: '', // Route names are clear
+                         tickangle: -45,
+                         automargin: true,
+                         tickfont: { size: 9 }
+                     },
+                     yaxis: {
+                         title: 'Average % Change',
+                         zeroline: true, // Show the zero line prominently
+                         zerolinewidth: 1,
+                         zerolinecolor: 'grey',
+                         tickformat: '.1%', // Format Y-axis labels as percentages
+                         rangemode: 'tozero' // Ensure y-axis includes zero if all values are positive/negative
+                    },
+                    margin: { l: 60, r: 20, t: 60, b: 120 }, // Increased bottom margin for angled labels
+                    height: 500, // Fixed or dynamic height
+                    autosize: true
+                 };
+
+                 await Plotly.newPlot(graphId, [trace], layout, {responsive: true});
+                 setupIndividualDownload(graphId, downloadLinkId, `3_yoy_change_pmi_${latestYear}_vs_${previousYear}.png`);
+                  return Promise.resolve();
+
+             } catch (e) {
+                 console.error(`Error plotting Graph 3 (${baseTitle}):`, e);
+                 displayGraphError(cardId, baseTitle, `Plotting error: ${e.message}`);
+                  return Promise.reject(e);
+             }
+         }
+
+         async function plotGraph4(data, latestYear) {
+            const graphId = 'graph-img-4';
+            const cardId = 'graph-card-4';
+            const baseTitle = "4. Revenue Component Composition";
+            const downloadLinkId = 'download-graph-4';
+
+            // Check if latest year data exists
+            if (!latestYear) {
+                displayGraphError(cardId, baseTitle, "Latest year not identified for analysis.");
+                return Promise.reject(new Error('Missing latest year for Graph 4'));
+            }
+
+             // Determine which revenue components actually have valid, positive data for the latest year
+            const validComponents = REVENUE_COMPONENTS.filter(col =>
+                data.some(r => r && r.Year === latestYear && r[col] !== null && !isNaN(r[col]) && r[col] > 0)
+            );
+
+            if (validComponents.length === 0) {
+                displayGraphError(cardId, baseTitle, `No valid, non-zero revenue component data (${REVENUE_COMPONENTS.join('/')}) found for ${latestYear}.`);
+                 return Promise.reject(new Error('No valid revenue components for Graph 4'));
+            }
+            console.log(`Plot 4: Using valid revenue components for ${latestYear}: ${validComponents.join(', ')}`);
+
+
+            try {
+                // Filter data for the latest year
+                const latestYearData = data.filter(r => r && r.Year === latestYear);
+                // No need to check length again, validComponents check implies data exists for the year
+
+                // Aggregate totals for each valid component per route
+                const routeTotals = {}; // { RouteName: { Comp1: total, Comp2: total, ... Total: totalRevenue } }
+                latestYearData.forEach(row => {
+                     if (!row.RouteName) return; // Skip rows without a route name
+                    if (!routeTotals[row.RouteName]) {
+                         // Initialize route entry with 0 for all valid components and a Total
+                         routeTotals[row.RouteName] = { Total: 0 };
+                         validComponents.forEach(comp => routeTotals[row.RouteName][comp] = 0);
+                     }
+                     // Add values for each component if they are valid numbers
+                     validComponents.forEach(comp => {
+                         const value = safeToNumericJS(row[comp]); // Use safe conversion
+                         if (!isNaN(value) && value > 0) {
+                             routeTotals[row.RouteName][comp] += value;
+                             routeTotals[row.RouteName].Total += value; // Add to the route's total revenue
+                         }
+                     });
+                });
+
+                // Convert to array, filter out routes with zero total revenue, sort by total revenue descending
+                let plotData = Object.entries(routeTotals)
+                    .map(([name, components]) => ({ RouteName: name, ...components })) // Spread component totals
+                    .filter(d => d.Total > 0) // Only include routes with some revenue
+                    .sort((a, b) => b.Total - a.Total); // Sort descending by total revenue
+
+                if (plotData.length === 0) {
+                    displayGraphError(cardId, baseTitle, `No routes found with non-zero total revenue from components (${validComponents.join(', ')}) for ${latestYear}.`);
+                    return Promise.reject(new Error('No routes with revenue for Graph 4'));
+                }
+
+                // Create a trace for each valid revenue component
+                const traces = validComponents.map(component => ({
+                    x: plotData.map(d => d.RouteName),
+                    y: plotData.map(d => d[component] || 0), // Use the aggregated value, default to 0
+                    name: component, // Legend label
+                    type: 'bar',
+                    hovertemplate: `<b>%{x}</b><br>${component}: %{y:,}<extra></extra>` // Show component value on hover
+                }));
+
+                const layout = {
+                    title: `Revenue Component Composition by Route (${latestYear})`,
+                    xaxis: {
+                        title: '', // Route names are clear
+                        tickangle: -45,
+                        automargin: true,
+                        tickfont: { size: 9 }
+                    },
+                    yaxis: {
+                        title: 'Total Count / Value', // Generic title as components might be counts or currency
+                         tickformat: ',' // Format with commas
+                     },
+                    barmode: 'stack', // Stack the components for each route
+                    margin: { l: 60, r: 20, t: 50, b: 120 }, // Adjust margins
+                    height: 500,
+                    autosize: true,
+                    legend: {
+                        traceorder: 'normal', // Order legend items as they appear in `traces`
+                         x: 1.02, y: 1 // Place legend slightly outside the plot area top-right
+                    },
+                    hovermode: 'x unified' // Show hover info for all components at a given route
+                };
+
+                await Plotly.newPlot(graphId, traces, layout, {responsive: true});
+                setupIndividualDownload(graphId, downloadLinkId, `4_revenue_composition_${latestYear}.png`);
+                 return Promise.resolve();
+
+            } catch (e) {
+                console.error(`Error plotting Graph 4 (${baseTitle}):`, e);
+                displayGraphError(cardId, baseTitle, `Plotting error: ${e.message}`);
+                 return Promise.reject(e);
+            }
+        }
+
+        async function plotGraph5(data) {
+            const graphId = 'graph-img-5';
+            const cardId = 'graph-card-5';
+            const baseTitle = "5. Passengers vs Total Miles";
+             const downloadLinkId = 'download-graph-5';
+
+             // Check if *any* valid data exists for the required columns across *all* files
+            if (!data || data.length === 0 ||
+                !data.some(r => r && r['Total Miles'] !== null && !isNaN(r['Total Miles']) && r['Total Miles'] > 0) ||
+                !data.some(r => r && r.Passengers !== null && !isNaN(r.Passengers) && r.Passengers > 0)) {
+                displayGraphError(cardId, baseTitle, "Requires data with valid positive 'Total Miles' and 'Passengers'. None found.");
+                return Promise.reject(new Error('Missing valid Miles/Passenger data for Graph 5'));
+            }
+
+            try {
+                // Calculate average monthly Passengers and Total Miles per route across all available data
+                const routeAvgs = {}; // { RouteName: { pTotal: num, pCount: num, mTotal: num, mCount: num } }
+                data.forEach(row => {
+                    if (!row || !row.RouteName) return;
+                    if (!routeAvgs[row.RouteName]) {
+                         routeAvgs[row.RouteName] = { pTotal: 0, pCount: 0, mTotal: 0, mCount: 0 };
+                     }
+                     // Accumulate Passengers if valid
+                    if (row.Passengers !== null && !isNaN(row.Passengers)) {
+                         routeAvgs[row.RouteName].pTotal += row.Passengers;
+                         routeAvgs[row.RouteName].pCount++;
+                     }
+                     // Accumulate Total Miles if valid
+                    if (row['Total Miles'] !== null && !isNaN(row['Total Miles'])) {
+                         routeAvgs[row.RouteName].mTotal += row['Total Miles'];
+                         routeAvgs[row.RouteName].mCount++;
+                     }
+                });
+
+                // Convert to array, calculate averages, filter routes lacking data for either metric or with zero averages
+                const avgData = Object.entries(routeAvgs)
+                    .filter(([name, { pCount, mCount }]) => pCount > 0 && mCount > 0) // Must have at least one month of data for both
+                    .map(([name, { pTotal, pCount, mTotal, mCount }]) => ({
+                        RouteName: name,
+                        AvgPassengers: pTotal / pCount,
+                        AvgMiles: mTotal / mCount
+                    }))
+                    .filter(d => d.AvgPassengers > 0 && d.AvgMiles > 0); // Filter out zero averages if desired
+
+                if (avgData.length === 0) {
+                    displayGraphError(cardId, baseTitle, "No routes found with positive average Passengers and Miles after processing all data.");
+                     return Promise.reject(new Error('No routes after averaging for Graph 5'));
+                }
+
+                // Create the scatter plot trace
+                const trace = {
+                    x: avgData.map(d => d.AvgMiles),
+                    y: avgData.map(d => d.AvgPassengers),
+                    mode: 'markers', // Just show markers
+                    type: 'scatter',
+                    // Custom hover text showing Route Name, Avg Miles, Avg Passengers
+                    text: avgData.map(d => `<b>${d.RouteName}</b><br>Avg Miles: ${d.AvgMiles.toFixed(0)}<br>Avg Passengers: ${d.AvgPassengers.toFixed(0)}`),
+                    hoverinfo: 'text', // Use the 'text' array for hover content
+                    marker: {
+                        // Size markers based on Avg Passengers (sqrt scaling reduces impact of outliers)
+                        size: avgData.map(d => Math.max(5, Math.min(25, Math.sqrt(d.AvgPassengers) / 2 + 5))), // Clamp size between 5 and 25
+                        // Color markers based on Avg Passengers using a colorscale
+                        color: avgData.map(d => d.AvgPassengers),
+                        colorscale: 'Viridis', // Choose a perceptually uniform colorscale
+                        showscale: true, // Show the color bar legend
+                        colorbar: {
+                            title: 'Avg Pass.', // Legend title for the color bar
+                            tickfont: { size: 9 },
+                            len: 0.7 // Adjust colorbar length if needed
+                        }
+                    }
+                };
+
+                const layout = {
+                    title: 'Average Monthly Passengers vs. Miles per Route (All Data)',
+                    xaxis: {
+                        title: 'Average Total Miles per Month',
+                        rangemode: 'tozero', // Start axis at 0
+                         tickformat: ','
+                    },
+                    yaxis: {
+                        title: 'Average Passengers per Month',
+                        rangemode: 'tozero', // Start axis at 0
+                         tickformat: ','
+                    },
+                    margin: { l: 70, r: 30, t: 50, b: 60 }, // Adjusted margins
+                    height: 500,
+                    autosize: true,
+                    hovermode: 'closest' // Highlight the single closest point on hover
+                };
+
+                await Plotly.newPlot(graphId, [trace], layout, {responsive: true});
+                 setupIndividualDownload(graphId, downloadLinkId, '5_passengers_vs_miles_scatter.png');
+                  return Promise.resolve();
+
+            } catch (e) {
+                console.error(`Error plotting Graph 5 (${baseTitle}):`, e);
+                displayGraphError(cardId, baseTitle, `Plotting error: ${e.message}`);
+                 return Promise.reject(e);
+            }
+        }
+
+        async function plotGraph6(data, latestYear) {
+            const graphId = 'graph-img-6';
+            const cardId = 'graph-card-6';
+            const baseTitle = "6. Monthly Passenger Heatmap";
+            const downloadLinkId = 'download-graph-6';
+
+             // Check if latest year data exists
+            if (!latestYear) {
+                displayGraphError(cardId, baseTitle, "Latest year not identified for analysis.");
+                return Promise.reject(new Error('Missing latest year for Graph 6'));
+            }
+
+            // Check if *any* passenger data exists for the latest year
+            if (!data || data.length === 0 || !data.some(r => r && r.Year === latestYear && r.Passengers !== null && !isNaN(r.Passengers))) {
+                displayGraphError(cardId, baseTitle, `No valid 'Passengers' data found for year ${latestYear}.`);
+                return Promise.reject(new Error('Missing Passenger data for Graph 6'));
+            }
+
+            try {
+                // Filter data for the latest year and valid passengers
+                const latestYearData = data.filter(r => r && r.Year === latestYear && r.Month && r.RouteName && r.Passengers !== null && !isNaN(r.Passengers));
+                // No need to check length again due to the check above
+
+                // Pivot data: Create a structure like { RouteName: { Month: TotalPassengers, ... }, ... }
+                const pivotData = {};
+                 let hasPositiveData = false; // Track if any cell will have a value > 0
+
+                latestYearData.forEach(row => {
+                    if (!pivotData[row.RouteName]) {
+                        // Initialize route with zeros for all months
+                        pivotData[row.RouteName] = {};
+                        MONTH_ORDER.forEach(m => pivotData[row.RouteName][m] = 0);
+                    }
+                     const passengers = Number(row.Passengers);
+                     if (passengers > 0) {
+                         pivotData[row.RouteName][row.Month] += passengers;
+                         hasPositiveData = true;
+                     } else if (passengers === 0 && pivotData[row.RouteName][row.Month] === 0) {
+                        // Allow explicit zero to overwrite initial zero if needed, but don't set hasPositiveData
+                         pivotData[row.RouteName][row.Month] = 0;
+                     }
+                });
+
+                // Get sorted list of route names (Y-axis labels)
+                const routeNames = Object.keys(pivotData).sort();
+
+                if (routeNames.length === 0) {
+                     displayGraphError(cardId, baseTitle, `No routes found with passenger data for ${latestYear}.`);
+                     return Promise.reject(new Error('No routes found for Graph 6'));
+                 }
+                 if (!hasPositiveData) {
+                     displayGraphError(cardId, baseTitle, `No non-zero passenger data found for ${latestYear} to display heatmap.`);
+                     return Promise.reject(new Error('Only zero values found for Graph 6'));
+                 }
+
+
+                // Prepare Z-values (the grid data) based on sorted routes and fixed month order
+                const zValues = routeNames.map(routeName =>
+                    MONTH_ORDER.map(month => pivotData[routeName][month]) // Get value for each month for this route
+                );
+
+                const xLabels = MONTH_ORDER; // X-axis labels (Months)
+                const yLabels = routeNames; // Y-axis labels (Routes)
+
+                const trace = {
+                    z: zValues, // The 2D array of passenger counts
+                    x: xLabels, // Months along the x-axis
+                    y: yLabels, // Route names along the y-axis
+                    type: 'heatmap',
+                    colorscale: 'Viridis', // Or 'Plasma', 'Blues', 'YlGnBu', etc.
+                    hoverongaps: false, // Don't show tooltips for empty cells (though we fill with 0)
+                    hovertemplate: `<b>%{y}</b><br>%{x}<br>Passengers: %{z:,}<extra></extra>`, // Custom hover text
+                    colorbar: {
+                        title: 'Passengers',
+                        tickfont: { size: 9 },
+                         tickformat: ',' // Format colorbar ticks
+                    }
+                };
+
+                const layout = {
+                    title: `Monthly Passenger Totals by Route (${latestYear})`,
+                    xaxis: {
+                        title: '',
+                        tickangle: -45,
+                        type: 'category', // Ensure months are treated as categories in order
+                        automargin: true
+                    },
+                    yaxis: {
+                        title: '',
+                        automargin: true, // Adjust margin to fit route names
+                        tickfont: { size: 9 },
+                        // Optional: Reverse y-axis if needed for convention
+                        // autorange: 'reversed'
+                    },
+                    margin: { l: 150, r: 20, t: 50, b: 80 }, // Adjust margins (esp. left for routes)
+                    // Dynamic height based on number of routes
+                    height: Math.max(400, Math.min(1000, routeNames.length * 18 + 100)), // Min 400, max 1000, scale with routes
+                    autosize: true
+                };
+
+                await Plotly.newPlot(graphId, [trace], layout, {responsive: true});
+                setupIndividualDownload(graphId, downloadLinkId, `6_monthly_heatmap_passengers_${latestYear}.png`);
+                 return Promise.resolve();
+
+            } catch (e) {
+                console.error(`Error plotting Graph 6 (${baseTitle}):`, e);
+                displayGraphError(cardId, baseTitle, `Plotting error: ${e.message}`);
+                 return Promise.reject(e);
+            }
+        }
+
+
+        // --- Download Logic ---
+
+        // Sets up the click handler for an individual graph's download link
+        function setupIndividualDownload(graphDivId, linkId, filename) {
+            const downloadLink = document.getElementById(linkId);
+            const graphDiv = document.getElementById(graphDivId); // The div where Plotly rendered the graph
+
+            if (downloadLink && graphDiv) {
+                 // Ensure link is not already hidden due to a previous error state on this card
+                if (graphDiv.closest('.graph-card') && !graphDiv.closest('.graph-card').classList.contains('error-card')) {
+                     downloadLink.style.display = 'inline'; // Make link visible only if no error
+                 } else {
+                      downloadLink.style.display = 'none'; // Keep hidden if card has error class
+                 }
+
+                // Remove any previous click listener to prevent duplicates
+                downloadLink.onclick = null;
+
+                // Add the new click listener
+                downloadLink.onclick = (e) => {
+                    e.preventDefault(); // Prevent default link behavior
+                    console.log(`Attempting to download: ${filename} from ${graphDivId}`);
+                    // Check if Plotly graph exists before trying to download
+                    if (graphDiv && graphDiv.classList.contains('js-plotly-plot')) {
+                         Plotly.downloadImage(graphDiv, {
+                             format: 'png',
+                             width: 1200, // Specify desired width for downloaded image
+                             height: 700, // Specify desired height
+                             filename: filename // Use the provided filename
+                         }).then(() => {
+                             console.log(`Download initiated for ${filename}`);
+                         }).catch(err => {
+                             console.error(`Plotly.downloadImage failed for ${graphDivId}:`, err);
+                             alert(`Failed to generate image for download: ${filename}\nError: ${err.message}`);
+                         });
+                    } else {
+                         console.error(`Cannot download ${filename}: Plotly graph not found in div ${graphDivId}.`);
+                         alert(`Cannot download ${filename}: Graph element not found or not rendered.`);
+                    }
+                };
+            } else {
+                 // Log if elements couldn't be found
+                 if (!downloadLink) console.warn(`Could not find download link element with ID: ${linkId}`);
+                 if (!graphDiv) console.warn(`Could not find graph div element with ID: ${graphDivId}`);
+            }
+        }
+
+
+        // Placeholder for future implementation with a library like JSZip
+        async function handleDownloadAll() {
+            alert("Download All functionality requires zipping images, which is complex in pure frontend JavaScript and typically needs an external library (like JSZip).\n\nPlease download graphs individually using the [↓] Download links below each chart for now.");
+
+            // --- Example using JSZip (if you were to add it) ---
+            /*
+            if (typeof JSZip === 'undefined') {
+                alert("JSZip library not loaded. Cannot download all.");
+                console.error("JSZip library is required for Download All functionality.");
+                return;
+            }
+
+            const zip = new JSZip();
+            const downloadPromises = [];
+            let filesAdded = 0;
+
+            console.log("Starting Download All process...");
+            downloadAllBtn.textContent = "[...] Zipping";
+            downloadAllBtn.disabled = true;
+
+
+            for (let i = 1; i <= 6; i++) {
+                const graphDivId = `graph-img-${i}`;
+                const cardId = `graph-card-${i}`;
+                const graphDiv = document.getElementById(graphDivId);
+                const card = document.getElementById(cardId);
+                const downloadLink = document.getElementById(`download-graph-${i}`);
+
+                // Only attempt to zip graphs that are visible and not in an error state
+                if (graphDiv && graphDiv.classList.contains('js-plotly-plot') && card && !card.classList.contains('error-card') && downloadLink) {
+                    const filename = downloadLink.download || `graph_${i}.png`; // Get filename from link attribute
+                    console.log(`Adding ${filename} to zip...`);
+
+                    // Create a promise for each image generation
+                    const promise = Plotly.toImage(graphDiv, { format: 'png', width: 1200, height: 700 })
+                        .then(dataUrl => {
+                            // Convert base64 data URL to blob
+                            const base64 = dataUrl.split(',')[1];
+                            return fetch(dataUrl).then(res => res.blob()); // More modern way
+                            // Or: const byteString = atob(base64); ... create blob manually ...
+                        })
+                        .then(blob => {
+                            zip.file(filename, blob); // Add blob to zip file
+                            filesAdded++;
+                            console.log(`Successfully added ${filename} to zip.`);
+                        })
+                        .catch(err => {
+                            console.error(`Failed to add ${filename} to zip:`, err);
+                            // Optionally add a text file indicating the error to the zip
+                            zip.file(`ERROR_${filename}.txt`, `Could not generate image for ${filename}. Error: ${err.message}`);
+                        });
+                    downloadPromises.push(promise);
+                } else {
+                     console.log(`Skipping Graph ${i} (not rendered or has error).`);
+                }
+            }
+
+            // Wait for all image generation and zipping promises to settle
+            Promise.allSettled(downloadPromises).then(() => {
+                console.log(`All graph processing finished. ${filesAdded} files added to zip.`);
+                if (filesAdded > 0) {
+                    // Generate the zip file and trigger download
+                    zip.generateAsync({ type: "blob" })
+                        .then(function(content) {
+                            // Use FileSaver.js (if included) or create an Object URL for download
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(content);
+                            link.download = "TransitVis_Graphs.zip";
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(link.href); // Clean up Object URL
+                            console.log("Zip file download triggered.");
+                        })
+                        .catch(err => {
+                            console.error("Error generating zip file:", err);
+                            alert("Error creating the zip file for download.");
+                        })
+                        .finally(() => {
+                             downloadAllBtn.textContent = "[↓] Download All Graphs";
+                             downloadAllBtn.disabled = false;
+                        });
+                } else {
+                    alert("No valid graphs were available to include in the zip file.");
+                     downloadAllBtn.textContent = "[↓] Download All Graphs";
+                     downloadAllBtn.disabled = false;
+                }
+            });
+            */
+        }
+
+
+    </script>
+
+</body>
+</html>
