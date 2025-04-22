@@ -1,10 +1,11 @@
-html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TransitVis Insights</title>
+    <link rel="icon" href="citybus.png" type="image/x-icon">
+    <link rel="apple-touch-icon" href="citybus.png">
+    <title>CityBusVis Insights</title>
     <!-- Link to Google Font (Example: Inter) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -388,11 +389,11 @@ html
     <div class="container">
         <header>
             <div class="logo">
-                <!-- Optional: <img src="logo.svg" alt="TransitVis Insights Logo"> -->
-                <h1>TransitVis Insights</h1>
+                <!-- Optional: <img src="logo.svg" alt="CityBusVis Insights Logo"> -->
+                <h1>CityBusVis Insights</h1>
             </div>
             <nav class="help-link">
-                <a href="#">Help</a> <!-- Link to documentation or modal -->
+                <a href="#"hidden>Help</a> <!-- Link to documentation or modal -->
             </nav>
         </header>
 
@@ -407,7 +408,7 @@ html
                     <p id="upload-instructions">Drag & drop your monthly CSV files here</p>
                     <div class="separator">OR</div>
                     <button class="btn btn-primary" id="browse-btn">
-                        <svg xmlns="http://www.worg/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16">
                           <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
                           <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
                         </svg>
@@ -447,8 +448,8 @@ html
                 </div>
 
                 <!-- Graph Display Area (Initially Hidden) -->
-                 <button id="download-all-btn" class="btn btn-secondary" style="display: none;">[↓] Download All Graphs</button>
-                <div class="grid-container" id="graph-grid" style="display: none;">
+                 <button id="download-all-btn" class="btn btn-secondary" style="display: none;" >[↓] Download All Graphs</button> 
+                <div class="grid-container" id="graph-grid" style="display: none;" >
                     <!-- Graph cards are containers -->
                     <div class="graph-card" id="graph-card-1">
                         <h4>1. Monthly Ridership Trend</h4>
@@ -464,13 +465,13 @@ html
                         </div>
                          <a href="#" class="download-graph-btn" id="download-graph-2" download="2_top_bottom_p_hrs.png" style="display:none;">[↓] Download</a>
                     </div>
-                   <!-- <div class="graph-card" id="graph-card-3">
-                        <h4> YoY Change in P/Mi Efficiency</h4>
+                    <!--<div class="graph-card" id="graph-card-3">
+                        <h4>3. YoY Change in P/Mi Efficiency</h4>
                          <div class="graph-image-container">
                              <div id="graph-img-3" class="plotly-graph-div"></div>
                         </div>
                         <a href="#" class="download-graph-btn" id="download-graph-3" download="3_yoy_change_pmi.png" style="display:none;">[↓] Download</a>
-                    </div> -->
+                    </div>-->
                     <div class="graph-card" id="graph-card-4">
                         <h4>4. Revenue Component Composition</h4>
                          <div class="graph-image-container">
@@ -500,7 +501,7 @@ html
     </div> <!-- /container -->
 
     <footer>
-        <p>© 2024 TransitVis Insights. All rights reserved.</p>
+        <p>© 2025 CityBusVis Insights.</p>
     </footer>
 
     <!-- **Move PapaParse Script here, right before your main application script** -->
@@ -556,7 +557,7 @@ html
                 return; // Stop initialization
             }
             setupEventListeners();
-            console.log("TransitVis Initialized");
+            console.log("CityBusVis Initialized");
         });
 
         // --- Event Listeners Setup ---
@@ -1233,8 +1234,8 @@ html
                  });
 
 
-                console.log("All plotting attempts finished.");
-                downloadAllBtn.style.display = 'block'; // Show download all button *after* plots attempted
+                //console.log("All plotting attempts finished.");
+                //downloadAllBtn.style.display = 'block'; // Show download all button *after* plots attempted
 
             } catch (error) {
                 // Catch unexpected errors during the overall generate process
@@ -1483,63 +1484,53 @@ html
             }
         }
 
-           <!--
+         async function plotGraph3(data, latestYear, previousYear, yearsPresent) {
+            const graphId = 'graph-img-3';
+            const cardId = 'graph-card-3';
+            const baseTitle = "3. YoY Change in P/Mi Efficiency";
+            const diffCol = 'P/Mi_%DIFF'; // The column holding the pre-calculated percentage difference
+             const downloadLinkId = 'download-graph-3';
 
-// async function plotGraph3(data, latestYear, previousYear, yearsPresent) {
-//     const graphId = 'graph-img-3';
-//     const cardId = 'graph-card-3';
-//     const baseTitle = "3. YoY Change in P/Mi Efficiency";
-//     const diffCol = 'P/Mi_%DIFF'; // The column holding the pre-calculated percentage difference
-//     const downloadLinkId = 'download-graph-3';
+            // Check if necessary years are available
+             if (!latestYear || !previousYear || !yearsPresent.includes(latestYear) || !yearsPresent.includes(previousYear)) {
+                const missingYears = [];
+                 if (!latestYear || !yearsPresent.includes(latestYear)) missingYears.push(latestYear || 'Latest');
+                 if (!previousYear || !yearsPresent.includes(previousYear)) missingYears.push(previousYear || 'Previous');
+                 displayGraphError(cardId, baseTitle, `Data missing for required comparison year(s): ${missingYears.join(' or ')}.`);
+                 return Promise.reject(new Error('Missing required years for Graph 3'));
+             }
 
-//     // Check if necessary years are available
-//     if (!latestYear || !previousYear || !yearsPresent.includes(latestYear) || !yearsPresent.includes(previousYear)) {
-//         const missingYears = [];
-//         if (!latestYear || !yearsPresent.includes(latestYear)) missingYears.push(latestYear || 'Latest');
-//         if (!previousYear || !yearsPresent.includes(previousYear)) missingYears.push(previousYear || 'Previous');
-//         displayGraphError(cardId, baseTitle, `Data missing for required comparison year(s): ${missingYears.join(' or ')}.`);
-//         return Promise.reject(new Error('Missing required years for Graph 3'));
-//     }
+             try {
+                 // Filter data for the latest year and rows where the specific diff column is a valid number
+                 const latestYearDataWithDiff = data.filter(r =>
+                     r && r.Year === latestYear && r[diffCol] !== null && !isNaN(r[diffCol])
+                 );
 
-//     try {
-//         // Filter data for the latest year and rows where the specific diff column is a valid number
-//         const latestYearDataWithDiff = data.filter(r =>
-//             r && r.Year === latestYear && r[diffCol] !== null && !isNaN(r[diffCol])
-//         );
+                 if (latestYearDataWithDiff.length === 0) {
+                     // Check if the diff column was expected but not found in the data
+                     const firstFileHeaders = uploadedFiles.find(f => f.status === 'ready')?.headers;
+                      const diffColExpected = firstFileHeaders ? findDiffColumnJS(firstFileHeaders, 'P/Mi') : null;
+                      let errorMsg = `No valid '${diffCol}' data found for year ${latestYear}.`;
+                      if (diffColExpected && !firstFileHeaders?.includes(diffColExpected)) {
+                           errorMsg += ` Expected column '${diffColExpected}' not found in headers.`;
+                      } else if (!diffColExpected) {
+                          errorMsg += ` No suitable '%DIFF FROM' column for P/Mi identified.`;
+                      }
+                     displayGraphError(cardId, baseTitle, errorMsg);
+                     return Promise.reject(new Error('No valid P/Mi %DIFF data for Graph 3'));
+                 }
 
-//         if (latestYearDataWithDiff.length === 0) {
-//             // Check if the diff column was expected but not found in the data
-//             const firstFileHeaders = uploadedFiles.find(f => f.status === 'ready')?.headers;
-//             const diffColExpected = firstFileHeaders ? findDiffColumnJS(firstFileHeaders, 'P/Mi') : null;
-//             let errorMsg = `No valid '${diffCol}' data found for year ${latestYear}.`;
-//             if (diffColExpected && !firstFileHeaders?.includes(diffColExpected)) {
-//                 errorMsg += ` Expected column '${diffColExpected}' not found in headers.`;
-//             } else if (!diffColExpected) {
-//                 errorMsg += ` No suitable '%DIFF FROM' column for P/Mi identified.`;
-//             }
-//             displayGraphError(cardId, baseTitle, errorMsg);
-//             return Promise.reject(new Error('No valid P/Mi %DIFF data for Graph 3'));
-//         }
-
-//         // Calculate the average % change per route for the latest year
-//         const routeChanges = {}; // { RouteName: { total: number, count: number } }
-//         latestYearDataWithDiff.forEach(row => {
-//             if (!routeChanges[row.RouteName]) routeChanges[row.RouteName] = { total: 0, count: 0 };
-//             // Ensure the value is treated as a number before adding
-//             const changeValue = Number(row[diffCol]);
-//             if (!isNaN(changeValue)) {
-//                 routeChanges[row.RouteName].total += changeValue;
-//                 routeChanges[row.RouteName].count++;
-//             }
-//         });
-//     } catch (err) {
-//         console.error(err);
-//         displayGraphError(cardId, baseTitle, "An error occurred while processing the data.");
-//         return Promise.reject(err);
-//     }
-// }
-
--->
+                 // Calculate the average % change per route for the latest year
+                 const routeChanges = {}; // { RouteName: { total: number, count: number } }
+                 latestYearDataWithDiff.forEach(row => {
+                     if (!routeChanges[row.RouteName]) routeChanges[row.RouteName] = { total: 0, count: 0 };
+                     // Ensure the value is treated as a number before adding
+                     const changeValue = Number(row[diffCol]);
+                     if (!isNaN(changeValue)) {
+                         routeChanges[row.RouteName].total += changeValue;
+                         routeChanges[row.RouteName].count++;
+                     }
+                 });
 
                  // Convert to array, calculate average, filter non-counts, sort by change value
                  const avgChanges = Object.entries(routeChanges)
@@ -1958,96 +1949,8 @@ html
         }
 
 
-        // Placeholder for future implementation with a library like JSZip
-        async function handleDownloadAll() {
-            alert("Download All functionality requires zipping images, which is complex in pure frontend JavaScript and typically needs an external library (like JSZip).\n\nPlease download graphs individually using the [↓] Download links below each chart for now.");
-
-            // --- Example using JSZip (if you were to add it) ---
-            /*
-            if (typeof JSZip === 'undefined') {
-                alert("JSZip library not loaded. Cannot download all.");
-                console.error("JSZip library is required for Download All functionality.");
-                return;
-            }
-
-            const zip = new JSZip();
-            const downloadPromises = [];
-            let filesAdded = 0;
-
-            console.log("Starting Download All process...");
-            downloadAllBtn.textContent = "[...] Zipping";
-            downloadAllBtn.disabled = true;
-
-
-            for (let i = 1; i <= 6; i++) {
-                const graphDivId = `graph-img-${i}`;
-                const cardId = `graph-card-${i}`;
-                const graphDiv = document.getElementById(graphDivId);
-                const card = document.getElementById(cardId);
-                const downloadLink = document.getElementById(`download-graph-${i}`);
-
-                // Only attempt to zip graphs that are visible and not in an error state
-                if (graphDiv && graphDiv.classList.contains('js-plotly-plot') && card && !card.classList.contains('error-card') && downloadLink) {
-                    const filename = downloadLink.download || `graph_${i}.png`; // Get filename from link attribute
-                    console.log(`Adding ${filename} to zip...`);
-
-                    // Create a promise for each image generation
-                    const promise = Plotly.toImage(graphDiv, { format: 'png', width: 1200, height: 700 })
-                        .then(dataUrl => {
-                            // Convert base64 data URL to blob
-                            const base64 = dataUrl.split(',')[1];
-                            return fetch(dataUrl).then(res => res.blob()); // More modern way
-                            // Or: const byteString = atob(base64); ... create blob manually ...
-                        })
-                        .then(blob => {
-                            zip.file(filename, blob); // Add blob to zip file
-                            filesAdded++;
-                            console.log(`Successfully added ${filename} to zip.`);
-                        })
-                        .catch(err => {
-                            console.error(`Failed to add ${filename} to zip:`, err);
-                            // Optionally add a text file indicating the error to the zip
-                            zip.file(`ERROR_${filename}.txt`, `Could not generate image for ${filename}. Error: ${err.message}`);
-                        });
-                    downloadPromises.push(promise);
-                } else {
-                     console.log(`Skipping Graph ${i} (not rendered or has error).`);
-                }
-            }
-
-            // Wait for all image generation and zipping promises to settle
-            Promise.allSettled(downloadPromises).then(() => {
-                console.log(`All graph processing finished. ${filesAdded} files added to zip.`);
-                if (filesAdded > 0) {
-                    // Generate the zip file and trigger download
-                    zip.generateAsync({ type: "blob" })
-                        .then(function(content) {
-                            // Use FileSaver.js (if included) or create an Object URL for download
-                            const link = document.createElement('a');
-                            link.href = URL.createObjectURL(content);
-                            link.download = "TransitVis_Graphs.zip";
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                            URL.revokeObjectURL(link.href); // Clean up Object URL
-                            console.log("Zip file download triggered.");
-                        })
-                        .catch(err => {
-                            console.error("Error generating zip file:", err);
-                            alert("Error creating the zip file for download.");
-                        })
-                        .finally(() => {
-                             downloadAllBtn.textContent = "[↓] Download All Graphs";
-                             downloadAllBtn.disabled = false;
-                        });
-                } else {
-                    alert("No valid graphs were available to include in the zip file.");
-                     downloadAllBtn.textContent = "[↓] Download All Graphs";
-                     downloadAllBtn.disabled = false;
-                }
-            });
-            */
-        }
+        
+        
 
 
     </script>
