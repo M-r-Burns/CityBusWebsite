@@ -1483,53 +1483,63 @@ html
             }
         }
 
-         <!--async function plotGraph3(data, latestYear, previousYear, yearsPresent) {
-            const graphId = 'graph-img-3';
-            const cardId = 'graph-card-3';
-            const baseTitle = "3. YoY Change in P/Mi Efficiency";
-            const diffCol = 'P/Mi_%DIFF'; // The column holding the pre-calculated percentage difference
-             const downloadLinkId = 'download-graph-3';
+           <!--
 
-            // Check if necessary years are available
-             if (!latestYear || !previousYear || !yearsPresent.includes(latestYear) || !yearsPresent.includes(previousYear)) {
-                const missingYears = [];
-                 if (!latestYear || !yearsPresent.includes(latestYear)) missingYears.push(latestYear || 'Latest');
-                 if (!previousYear || !yearsPresent.includes(previousYear)) missingYears.push(previousYear || 'Previous');
-                 displayGraphError(cardId, baseTitle, `Data missing for required comparison year(s): ${missingYears.join(' or ')}.`);
-                 return Promise.reject(new Error('Missing required years for Graph 3'));
-             }
+// async function plotGraph3(data, latestYear, previousYear, yearsPresent) {
+//     const graphId = 'graph-img-3';
+//     const cardId = 'graph-card-3';
+//     const baseTitle = "3. YoY Change in P/Mi Efficiency";
+//     const diffCol = 'P/Mi_%DIFF'; // The column holding the pre-calculated percentage difference
+//     const downloadLinkId = 'download-graph-3';
 
-             try {
-                 // Filter data for the latest year and rows where the specific diff column is a valid number
-                 const latestYearDataWithDiff = data.filter(r =>
-                     r && r.Year === latestYear && r[diffCol] !== null && !isNaN(r[diffCol])
-                 );
+//     // Check if necessary years are available
+//     if (!latestYear || !previousYear || !yearsPresent.includes(latestYear) || !yearsPresent.includes(previousYear)) {
+//         const missingYears = [];
+//         if (!latestYear || !yearsPresent.includes(latestYear)) missingYears.push(latestYear || 'Latest');
+//         if (!previousYear || !yearsPresent.includes(previousYear)) missingYears.push(previousYear || 'Previous');
+//         displayGraphError(cardId, baseTitle, `Data missing for required comparison year(s): ${missingYears.join(' or ')}.`);
+//         return Promise.reject(new Error('Missing required years for Graph 3'));
+//     }
 
-                 if (latestYearDataWithDiff.length === 0) {
-                     // Check if the diff column was expected but not found in the data
-                     const firstFileHeaders = uploadedFiles.find(f => f.status === 'ready')?.headers;
-                      const diffColExpected = firstFileHeaders ? findDiffColumnJS(firstFileHeaders, 'P/Mi') : null;
-                      let errorMsg = `No valid '${diffCol}' data found for year ${latestYear}.`;
-                      if (diffColExpected && !firstFileHeaders?.includes(diffColExpected)) {
-                           errorMsg += ` Expected column '${diffColExpected}' not found in headers.`;
-                      } else if (!diffColExpected) {
-                          errorMsg += ` No suitable '%DIFF FROM' column for P/Mi identified.`;
-                      }
-                     displayGraphError(cardId, baseTitle, errorMsg);
-                     return Promise.reject(new Error('No valid P/Mi %DIFF data for Graph 3'));
-                 }
+//     try {
+//         // Filter data for the latest year and rows where the specific diff column is a valid number
+//         const latestYearDataWithDiff = data.filter(r =>
+//             r && r.Year === latestYear && r[diffCol] !== null && !isNaN(r[diffCol])
+//         );
 
-                 // Calculate the average % change per route for the latest year
-                 const routeChanges = {}; // { RouteName: { total: number, count: number } }
-                 latestYearDataWithDiff.forEach(row => {
-                     if (!routeChanges[row.RouteName]) routeChanges[row.RouteName] = { total: 0, count: 0 };
-                     // Ensure the value is treated as a number before adding
-                     const changeValue = Number(row[diffCol]);
-                     if (!isNaN(changeValue)) {
-                         routeChanges[row.RouteName].total += changeValue;
-                         routeChanges[row.RouteName].count++;
-                     }
-                 });   -->
+//         if (latestYearDataWithDiff.length === 0) {
+//             // Check if the diff column was expected but not found in the data
+//             const firstFileHeaders = uploadedFiles.find(f => f.status === 'ready')?.headers;
+//             const diffColExpected = firstFileHeaders ? findDiffColumnJS(firstFileHeaders, 'P/Mi') : null;
+//             let errorMsg = `No valid '${diffCol}' data found for year ${latestYear}.`;
+//             if (diffColExpected && !firstFileHeaders?.includes(diffColExpected)) {
+//                 errorMsg += ` Expected column '${diffColExpected}' not found in headers.`;
+//             } else if (!diffColExpected) {
+//                 errorMsg += ` No suitable '%DIFF FROM' column for P/Mi identified.`;
+//             }
+//             displayGraphError(cardId, baseTitle, errorMsg);
+//             return Promise.reject(new Error('No valid P/Mi %DIFF data for Graph 3'));
+//         }
+
+//         // Calculate the average % change per route for the latest year
+//         const routeChanges = {}; // { RouteName: { total: number, count: number } }
+//         latestYearDataWithDiff.forEach(row => {
+//             if (!routeChanges[row.RouteName]) routeChanges[row.RouteName] = { total: 0, count: 0 };
+//             // Ensure the value is treated as a number before adding
+//             const changeValue = Number(row[diffCol]);
+//             if (!isNaN(changeValue)) {
+//                 routeChanges[row.RouteName].total += changeValue;
+//                 routeChanges[row.RouteName].count++;
+//             }
+//         });
+//     } catch (err) {
+//         console.error(err);
+//         displayGraphError(cardId, baseTitle, "An error occurred while processing the data.");
+//         return Promise.reject(err);
+//     }
+// }
+
+-->
 
                  // Convert to array, calculate average, filter non-counts, sort by change value
                  const avgChanges = Object.entries(routeChanges)
